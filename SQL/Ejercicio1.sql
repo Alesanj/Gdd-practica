@@ -1,5 +1,8 @@
 -- 1) Mostrar el código, razón social de todos los clientes cuyo límite de crédito sea mayor o
 -- igual a $ 1000 ordenado por código de cliente.
+
+use GD2015C1
+
 select c.clie_codigo, 
 	   c.clie_razon_social 
 from Cliente c 
@@ -30,5 +33,4 @@ SELECT
 	j.empl_nombre
 FROM Empleado e1 JOIN Empleado j ON e1.empl_jefe = j.empl_codigo;
 
-
-Select * from Empleado 
+Select * from Cliente 
