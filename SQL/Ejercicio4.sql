@@ -5,28 +5,39 @@ promedio por depósito sea mayor a 100.
 USE GD2015C1
 GO
 
+SELECT * FROM Composicion WHERE comp_producto = 00006404
 SELECT 
 	p.prod_codigo
 	,p.prod_detalle
-	,COUNT(*) AS cant_componentes
-	,ISNULL((SELECT
+	,COUNT(comp.comp_componente) AS cant_componentes
+	,FLOOR(ISNULL((SELECT
 		AVG(stoc_cantidad)
 		FROM  Producto subp
 		JOIN STOCK ON stoc_producto = subp.prod_codigo 
 		WHERE subp.prod_codigo = p.prod_codigo
 		GROUP BY prod_codigo
-		),0)
-FROM Composicion comp
-JOIN Producto p ON comp.comp_producto = p.prod_codigo
-JOIN Producto pc ON pc.prod_codigo = comp.comp_componente
+		),0)) AS PROMEDIO
+
+FROM Producto p
+LEFT JOIN Composicion comp ON comp.comp_producto = p.prod_codigo
+LEFT JOIN Producto pc ON pc.prod_codigo = comp.comp_componente
 GROUP BY p.prod_codigo, p.prod_detalle
+HAVING (ISNULL((SELECT
+		AVG(stoc_cantidad)
+		FROM  Producto subp
+		JOIN STOCK ON stoc_producto = subp.prod_codigo 
+		WHERE subp.prod_codigo = p.prod_codigo
+		GROUP BY prod_codigo
+		),0)) > 100
+ORDER BY 3 DESC
+
 -- Tabla para comprobar los promedios por deposito
 SELECT 
 		prod_codigo
 		,prod_detalle
 		,AVG(stoc_cantidad)
 FROM  Producto  
-LEFT JOIN STOCK ON stoc_producto = prod_codigo 
+JOIN STOCK ON stoc_producto = prod_codigo 
 GROUP BY prod_codigo,prod_detalle
 ORDER BY 2
 
