@@ -9,13 +9,13 @@ SELECT
 	p.prod_codigo
 	,p.prod_detalle
 	,COUNT(*) AS cant_componentes
-	,(SELECT
+	,ISNULL((SELECT
 		AVG(stoc_cantidad)
 		FROM  Producto subp
 		JOIN STOCK ON stoc_producto = subp.prod_codigo 
 		WHERE subp.prod_codigo = p.prod_codigo
 		GROUP BY prod_codigo
-		)		
+		),0)
 FROM Composicion comp
 JOIN Producto p ON comp.comp_producto = p.prod_codigo
 JOIN Producto pc ON pc.prod_codigo = comp.comp_componente
