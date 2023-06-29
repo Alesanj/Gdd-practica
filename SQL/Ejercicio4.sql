@@ -12,7 +12,7 @@ SELECT
 	,(SELECT
 		AVG(stoc_cantidad)
 		FROM  Producto subp
-		INNER JOIN STOCK ON stoc_producto = subp.prod_codigo 
+		JOIN STOCK ON stoc_producto = subp.prod_codigo 
 		WHERE subp.prod_codigo = p.prod_codigo
 		GROUP BY prod_codigo
 		)		
