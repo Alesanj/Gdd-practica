@@ -3,8 +3,6 @@ stock que se realizaron para ese artículo en el año 2012 (egresan los productos 
 fueron vendidos). Mostrar solo aquellos que hayan tenido más egresos que en el 2011.*/
 USE GD2015C1
 GO
-SELECT * FROM Producto
-
 
 SELECT 
 	prod.prod_codigo
@@ -28,5 +26,37 @@ HAVING SUM(ISNULL(item.item_cantidad,0)) >= (SELECT SUM(ISNULL(subitem.item_cant
 		WHERE subprod.prod_codigo = prod.prod_codigo
 		GROUP BY subprod.prod_codigo
 	)
-ORDER BY 2
+ORDER BY 3 DESC
 
+-- version del profesor mas performante porque no tiene subselect, Mas eficiente
+SELECT 
+ p1.prod_codigo,
+ p1.prod_detalle,
+ SUM(
+  CASE WHEN YEAR(fact_fecha) = 2012 THEN item_cantidad 
+    ELSE 0 
+  END 
+ ) as cant_vendida
+FROM Producto p1
+JOIN Item_Factura i1 on i1.item_producto = p1.prod_codigo
+JOIN Factura f1 
+  on i1.item_numero = f1.fact_numero 
+ and i1.item_sucursal = f1.fact_sucursal 
+ and i1.item_tipo = f1.fact_tipo
+WHERE 
+ YEAR(f1.fact_fecha) IN ( 2012 , 2011 )
+GROUP BY 
+ p1.prod_codigo,
+ p1.prod_detalle
+HAVING 
+  SUM(
+   CASE WHEN YEAR(fact_fecha) = 2012 THEN item_cantidad 
+     ELSE 0 
+   END 
+  ) > 
+  ISNULL(SUM(
+   CASE WHEN YEAR(fact_fecha) = 2011 THEN item_cantidad 
+     ELSE 0 
+   END 
+  ),0)
+  ORDER BY cant_vendida DESC
