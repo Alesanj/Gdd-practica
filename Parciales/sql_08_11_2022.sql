@@ -12,19 +12,36 @@ Además, mostrar para el 2012:
 El resultado deberá ser ordenado poniendo primero aquellos clientes que compraron más de 10 productos distintos en el 2012. 
 */
 ------------------------------------------------------------------------------------------------------------------------------
+USE GD2015C1
+GO
 SELECT 
 	cli.clie_codigo
 	,cli.clie_razon_social
 	,COUNT(DISTINCT p.prod_codigo) AS cant_prod_distintos
-	,ISNULL((SELECT COUNT(DISTINCT subcompo.comp_producto) 
+	,COUNT(DISTINCT compo.comp_producto)AS cant_prod_compuestossss
+	,(	SELECT TOP 1	
+		 subp.prod_codigo
 		FROM Cliente subcli
-		LEFT JOIN Factura subf ON subf.fact_cliente = subcli.clie_codigo AND YEAR(subf.fact_fecha) = 2012
-		JOIN Item_Factura subitem ON subf.fact_tipo = subitem.item_tipo AND subf.fact_sucursal = subitem.item_sucursal AND subf.fact_numero = subitem.item_numero
-		JOIN Producto subp ON subp.prod_codigo = subitem.item_producto 
-		JOIN Composicion subcompo ON subcompo.comp_producto = subp.prod_codigo
+		LEFT JOIN Factura f ON f.fact_cliente = subcli.clie_codigo AND YEAR(f.fact_fecha) = 2012
+		JOIN Item_Factura item ON f.fact_tipo = item.item_tipo AND f.fact_sucursal=item.item_sucursal AND f.fact_numero = item.item_numero
+		JOIN Producto subp ON subp.prod_codigo = item.item_producto
 		WHERE subcli.clie_codigo = cli.clie_codigo
-		GROUP BY subcli.clie_codigo),0) AS cant_prod_compuestos
-	,CASE WHEN (	SELECT COUNT(	
+		GROUP BY subcli.clie_codigo,subp.prod_codigo
+		ORDER BY SUM(item.item_cantidad) DESC 
+	) AS prod_mas_vendido_codigo
+
+	,(	SELECT TOP 1	
+		 subp.prod_detalle
+		FROM Cliente subcli
+		LEFT JOIN Factura f ON f.fact_cliente = subcli.clie_codigo AND YEAR(f.fact_fecha) = 2012
+		JOIN Item_Factura item ON f.fact_tipo = item.item_tipo AND f.fact_sucursal=item.item_sucursal AND f.fact_numero = item.item_numero
+		JOIN Producto subp ON subp.prod_codigo = item.item_producto
+		WHERE subcli.clie_codigo = cli.clie_codigo
+		GROUP BY subcli.clie_codigo,subp.prod_detalle
+		ORDER BY SUM(item.item_cantidad) DESC 
+	) AS prod_mas_vendido_detalle
+
+	,CASE WHEN (SELECT COUNT(	
 			DISTINCT MONTH(fact_fecha))
 			FROM Cliente subcli
 			LEFT JOIN Factura subf ON subf.fact_cliente = subcli.clie_codigo AND YEAR(subf.fact_fecha) = 2012
@@ -35,8 +52,10 @@ FROM Cliente cli
 LEFT JOIN Factura f ON f.fact_cliente = cli.clie_codigo AND YEAR(f.fact_fecha) = 2012
 JOIN Item_Factura item ON f.fact_tipo = item.item_tipo AND f.fact_sucursal=item.item_sucursal AND f.fact_numero = item.item_numero
 JOIN Producto p ON p.prod_codigo = item.item_producto
+LEFT JOIN Composicion compo ON compo.comp_producto = p.prod_codigo
 GROUP BY cli.clie_codigo,cli.clie_razon_social
-ORDER BY 1
+ORDER BY 3 DESC
+		
 ------------------------------------------------------------------------------------------------------------------------------
 
 --Con esta consulta en realidad puedo ver que no hay clientes que hayan comprado en todos los meses del 2012
@@ -48,16 +67,6 @@ JOIN Factura ON clie_codigo = fact_cliente
 WHERE YEAR(fact_fecha) = 2012
 ORDER BY 2 DESC 
 ------------------------------------------------------------------------------------------------------------------------------
-SELECT 
-	cli.clie_codigo
-	,cli.clie_razon_social
-FROM Cliente cli
-LEFT JOIN Factura f ON f.fact_cliente = cli.clie_codigo AND YEAR(f.fact_fecha) = 2012
-JOIN Item_Factura item ON f.fact_tipo = item.item_tipo AND f.fact_sucursal=item.item_sucursal AND f.fact_numero = item.item_numero
-JOIN Producto p ON p.prod_codigo = item.item_producto
-GROUP BY cli.clie_codigo,cli.clie_razon_social
-ORDER BY 1
-
 -- Con esta query podemos determinar cuantos productos compuestos tiene un producto, solo joineamos con composicion
 -- y los registros que quedan son los que estan compuestos, puedo agrupar por prod_codigo y contar cuantos prod tiene 
 SELECT prod_codigo, count(comp_producto)
@@ -80,10 +89,19 @@ GROUP BY subcli.clie_codigo
 SELECT	
 		subcli.clie_codigo 
 		,subp.prod_detalle
-		,COUNT(subp.prod_codigo)
+		,FLOOR(SUM(item.item_cantidad))
 FROM Cliente subcli
 LEFT JOIN Factura f ON f.fact_cliente = subcli.clie_codigo AND YEAR(f.fact_fecha) = 2012
 JOIN Item_Factura item ON f.fact_tipo = item.item_tipo AND f.fact_sucursal=item.item_sucursal AND f.fact_numero = item.item_numero
 JOIN Producto subp ON subp.prod_codigo = item.item_producto
 GROUP BY subcli.clie_codigo, subp.prod_detalle
 ORDER BY 3 DESC 
+
+/*2. Implementar una regla de negocio de validación en línea que permita
+implementar una lógica de control de precios en las ventas. Se deberá
+poder seleccionar una lista de rubros y aquellos productos de los rubros
+que sean los seleccionados no podrán aumentar por mes más de un 2
+%. En caso que no se tenga referencia del mes anterior no validar
+dicha regla. */
+
+
