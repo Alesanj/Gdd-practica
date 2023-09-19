@@ -61,11 +61,11 @@ HAVING (SELECT	SUM(subf.fact_total) FROM Factura subf
 			GROUP BY subc.clie_codigo) > (SELECT AVG(f2.fact_total) FROM Factura f2 WHERE YEAR(f2.fact_fecha) = 2012)
 
 -- Todavia no se como resolver esto del ordenamiento, deberia hacer una particion?
-ORDER BY CASE WHEN (COUNT(DISTINCT pr.prod_codigo)) > 5 AND (COUNT(DISTINCT pr.prod_codigo)) < 10 
-			  THEN 2 
-			  ELSE 1
-			  END
-			  	
+ORDER BY 
+	CASE
+		WHEN ISNULL(COUNT(DISTINCT pr.prod_codigo),0) BETWEEN 5 AND 10 THEN 0 
+		ELSE 1 
+	END
 
 ------------------
 SELECT * FROM Producto WHERE prod_codigo = '00001705'
